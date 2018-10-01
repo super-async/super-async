@@ -2,7 +2,6 @@ package org.superasync;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
-import java.util.concurrent.FutureTask;
 
 public class AsyncObserver<V> implements Observer<V>, CancellableTask {
 
@@ -50,10 +49,10 @@ public class AsyncObserver<V> implements Observer<V>, CancellableTask {
 
     }
 
-    private class FutureInner extends FutureTask<V> {
+    private class FutureInner extends FutureValue<V> {
 
         FutureInner() {
-            super(EMPTY_RUNNABLE, null);
+            super();
         }
 
         @Override
@@ -114,11 +113,4 @@ public class AsyncObserver<V> implements Observer<V>, CancellableTask {
             }
         }
     }
-
-    private static final Runnable EMPTY_RUNNABLE = new Runnable() {
-        @Override
-        public void run() {
-
-        }
-    };
 }
