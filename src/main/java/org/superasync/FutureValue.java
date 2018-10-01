@@ -9,7 +9,7 @@ public class FutureValue<V> implements Future<V> {
 
     private final CountDownLatch countDownLatch = new CountDownLatch(1);
     private final AtomicInteger state = new AtomicInteger(WAITING);
-    private volatile Object result;
+    private Object result;
 
     @Override
     public boolean cancel(boolean mayInterruptIfRunning) {

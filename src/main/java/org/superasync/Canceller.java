@@ -1,13 +1,15 @@
 package org.superasync;
 
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 class Canceller {
 
     private final AtomicBoolean isCancelled = new AtomicBoolean(false);
 
-    private final CopyOnWriteArrayList<CompletableCancellable> list = new CopyOnWriteArrayList<CompletableCancellable>() ;
+    private final Collection<CompletableCancellable> collection = new ConcurrentLinkedQueue<CompletableCancellable>();
 
     void add(CompletableCancellable cancellable) {
         if (isCancelled.get()) {
@@ -15,9 +17,11 @@ class Canceller {
             return;
         }
 
-        for (CompletableCancellable c : list) {
+        Iterator<CompletableCancellable> it = collection.iterator();
+        while (it.hasNext()){
+            CompletableCancellable c = it.next();
             if (c.isDone()) {
-                list.remove(c);
+                it.remove();
             }
         }
 
@@ -25,7 +29,7 @@ class Canceller {
             return;
         }
 
-        list.add(cancellable);
+        collection.add(cancellable);
         if (isCancelled.get()) {
             cancellable.cancel();
         }
@@ -33,7 +37,7 @@ class Canceller {
 
     void cancel() {
         if (isCancelled.compareAndSet(false, true)) {
-            for (Cancellable c : list) {
+            for (Cancellable c : collection) {
                 c.cancel();
             }
         }
