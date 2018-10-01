@@ -39,7 +39,7 @@ class RetryingSuperAsync<V> extends SuperAsync<V> {
 
         @Override
         public void onError(Throwable e) {
-            final long delay = condition.check(e, count.getAndIncrement());
+            final long delay = condition.check(e, count.incrementAndGet());
             if (delay < 0) {
                 original.onError(e);
             } else {

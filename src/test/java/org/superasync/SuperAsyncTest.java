@@ -77,7 +77,7 @@ public class SuperAsyncTest {
         Assert.assertEquals(Boolean.TRUE, SuperAsync.newInstance(Executors.newSingleThreadExecutor(), new Callable<Boolean>() {
             @Override
             public Boolean call() throws Exception {
-                if (2 > count++) {
+                if (++count < 2) {
                     throw new Exception();
                 }
                 return true;
