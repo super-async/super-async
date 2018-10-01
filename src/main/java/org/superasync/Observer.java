@@ -1,0 +1,127 @@
+package org.superasync;
+
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
+
+public class Observer<V> implements BaseObserver<V>, Canceller {
+
+    private final Executor executor;
+    private final ResultConsumer<V> resultConsumer;
+    private final ErrorConsumer errorConsumer;
+    private final OnCancelListener onCancelListener;
+    final FutureInner future = new FutureInner();
+
+    Observer(Executor executor, ResultConsumer<V> resultConsumer,
+             ErrorConsumer errorConsumer, OnCancelListener onCancelListener) {
+        this.executor = executor;
+        this.resultConsumer = resultConsumer;
+        this.errorConsumer = errorConsumer;
+        this.onCancelListener = onCancelListener;
+    }
+
+    @Override
+    public void onResult(final V result) {
+        future.set(result);
+    }
+
+    @Override
+    public void onError(final Throwable e) {
+        future.setException(e);
+    }
+
+    @Override
+    public boolean isUseless() {
+        return future.isDone();
+    }
+
+    @Override
+    public boolean isObserving() {
+        return !future.isDone();
+    }
+
+    @Override
+    public void cancel() {
+        future.cancel(false);
+    }
+
+    static <V> Future<V> toFuture(BaseObserver<V> observer) {
+        if (observer instanceof Observer) {
+            return ((Observer<V>) observer).future;
+        }
+        return null;
+    }
+
+    private class FutureInner extends FutureTask<V> {
+
+        FutureInner() {
+            super(EMPTY_RUNNABLE, null);
+        }
+
+        @Override
+        public void set(V v) {
+            super.set(v);
+        }
+
+        @Override
+        public void setException(Throwable t) {
+            super.setException(t);
+        }
+
+        @Override
+        protected void done() {
+            try {
+                final V result = get();
+                if (resultConsumer == null) {
+                    return;
+                }
+                executor.execute(new Runnable() {
+
+                    @Override
+                    public void run() {
+                        try {
+                            resultConsumer.onResult(result);
+                        } catch (Exception e) {
+                            errorConsumer.onError(e);
+                        }
+                    }
+                });
+            } catch (final Exception e) {
+                if (e instanceof ExecutionException) {
+                    if (errorConsumer == null) {
+                        throw new RuntimeException(e);
+                    }
+                    executor.execute(new Runnable() {
+                        @Override
+                        public void run() {
+                            errorConsumer.onError(e);
+                        }
+                    });
+                } else {
+                    if (onCancelListener == null) {
+                        return;
+                    }
+                    executor.execute(new Runnable() {
+
+                        @Override
+                        public void run() {
+                            try {
+                                onCancelListener.onCancel();
+                            } catch (Exception e) {
+                                errorConsumer.onError(e);
+                            }
+                        }
+                    });
+                }
+            }
+        }
+    }
+
+    private static final Runnable EMPTY_RUNNABLE = new Runnable() {
+        @Override
+        public void run() {
+
+        }
+    };
+}
