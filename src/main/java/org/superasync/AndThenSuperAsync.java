@@ -2,7 +2,6 @@ package org.superasync;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Future;
 
 class AndThenSuperAsync<U, V> extends SuperAsync<V> {
 
@@ -16,8 +15,8 @@ class AndThenSuperAsync<U, V> extends SuperAsync<V> {
     }
 
     @Override
-    void execute(final BaseObserver<V> observer, final Canceller canceller) {
-        original.execute(new BaseObserver<U>() {
+    void execute(final Observer<V> observer, final Canceller canceller) {
+        original.execute(new Observer<U>() {
             @Override
             public void onResult(final U result) {
                 CancellableTask cancellableTask = submit(new Callable<V>() {

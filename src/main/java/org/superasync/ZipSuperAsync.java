@@ -19,7 +19,7 @@ public class ZipSuperAsync<U, V, R> extends SuperAsync<R> {
     }
 
     @Override
-    public void execute(BaseObserver<R> observer, Canceller canceller) {
+    public void execute(Observer<R> observer, Canceller canceller) {
 
         AtomicReference<Object> firstOne = new AtomicReference<Object>(null);
 
@@ -27,13 +27,13 @@ public class ZipSuperAsync<U, V, R> extends SuperAsync<R> {
         superAsync2.execute(new ResultConsumer2(observer, canceller, firstOne), canceller);
     }
 
-    private class ResultConsumer1 implements BaseObserver<U> {
+    private class ResultConsumer1 implements Observer<U> {
 
         private final Canceller canceller;
-        private final BaseObserver<R> observer;
+        private final Observer<R> observer;
         private final AtomicReference<Object> firstOne;
 
-        ResultConsumer1(BaseObserver<R> observer,
+        ResultConsumer1(Observer<R> observer,
                         Canceller canceller,
                         AtomicReference<Object> firstOne) {
             this.observer = observer;
@@ -66,13 +66,13 @@ public class ZipSuperAsync<U, V, R> extends SuperAsync<R> {
         }
     }
 
-    private class ResultConsumer2 implements BaseObserver<V> {
+    private class ResultConsumer2 implements Observer<V> {
 
         private final Canceller canceller;
-        private final BaseObserver<R> observer;
+        private final Observer<R> observer;
         private final AtomicReference<Object> firstOne;
 
-        ResultConsumer2(BaseObserver<R> observer,
+        ResultConsumer2(Observer<R> observer,
                         Canceller canceller,
                         AtomicReference<Object> firstOne) {
             this.observer = observer;

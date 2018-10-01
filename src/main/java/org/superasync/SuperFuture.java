@@ -6,9 +6,9 @@ import java.util.concurrent.FutureTask;
 
 public class SuperFuture<V> extends FutureTask<V> {
 
-    private final BaseObserver<V> callback;
+    private final Observer<V> callback;
 
-    SuperFuture(Callable<V> callable, BaseObserver<V> callback) {
+    SuperFuture(Callable<V> callable, Observer<V> callback) {
         super(callable);
         this.callback = callback;
     }

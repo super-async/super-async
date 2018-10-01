@@ -14,7 +14,7 @@ interface CancellableTask extends Runnable {
     }
 
     class Factory {
-        static <V> CancellableTask fromCallable(Callable<V> callable, BaseObserver<V> observer) {
+        static <V> CancellableTask fromCallable(Callable<V> callable, Observer<V> observer) {
             return new FromCallable<V>(callable, observer);
         }
     }
@@ -23,10 +23,10 @@ interface CancellableTask extends Runnable {
 
         private final AtomicBoolean isDone = new AtomicBoolean(false);
         private final Callable<V> task;
-        private final BaseObserver<V> observer;
+        private final Observer<V> observer;
         private V result;
 
-        FromCallable(Callable<V> task, BaseObserver<V> observer) {
+        FromCallable(Callable<V> task, Observer<V> observer) {
             this.task = task;
             this.observer = observer;
         }

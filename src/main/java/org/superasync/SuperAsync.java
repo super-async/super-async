@@ -2,7 +2,6 @@ package org.superasync;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Future;
 
 public abstract class SuperAsync<V> {
 
@@ -29,7 +28,7 @@ public abstract class SuperAsync<V> {
         this.executor = executor;
     }
 
-    CancellableTask submit(Callable<V> task, BaseObserver<V> observer) {
+    CancellableTask submit(Callable<V> task, Observer<V> observer) {
         CancellableTask cancellableTask = CancellableTask.Factory.fromCallable(task, observer);
         executor.execute(cancellableTask);
         return cancellableTask;
@@ -53,7 +52,7 @@ public abstract class SuperAsync<V> {
                                    ErrorConsumer errorConsumer,
                                    OnCancelListener onCancelListener, Executor observingExecutor) {
         Canceller canceller = new Canceller();
-        Observer<V> observer = new Observer<V>(
+        AsyncObserver<V> observer = new AsyncObserver<V>(
                 observingExecutor != null ? observingExecutor
                         : ExecutorProviderStaticRef.getExecutorProvider().defaultObserving(),
                 resultConsumer, errorConsumer, onCancelListener);
@@ -63,7 +62,7 @@ public abstract class SuperAsync<V> {
     }
 
 
-    abstract void execute(BaseObserver<V> observer, Canceller canceller);
+    abstract void execute(Observer<V> observer, Canceller canceller);
 
     public final <U> SuperAsync<U> andThen(final Transformation<V, U> transformation) {
         return new AndThenSuperAsync<V, U>(executor, this, transformation);
