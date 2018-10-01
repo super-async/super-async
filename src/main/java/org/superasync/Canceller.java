@@ -7,33 +7,33 @@ class Canceller {
 
     private final AtomicBoolean isCancelled = new AtomicBoolean(false);
 
-    private final CopyOnWriteArrayList<CancellableTask> cancellableTasks = new CopyOnWriteArrayList<CancellableTask>();
+    private final CopyOnWriteArrayList<CompletableCancellable> list = new CopyOnWriteArrayList<CompletableCancellable>() ;
 
-    void add(CancellableTask cancellableTask) {
+    void add(CompletableCancellable cancellable) {
         if (isCancelled.get()) {
-            cancellableTask.cancel();
+            cancellable.cancel();
             return;
         }
 
-        for (CancellableTask c : cancellableTasks) {
+        for (CompletableCancellable c : list) {
             if (c.isDone()) {
-                cancellableTasks.remove(c);
+                list.remove(c);
             }
         }
 
-        if (cancellableTask.isDone()) {
+        if (cancellable.isDone()) {
             return;
         }
 
-        cancellableTasks.add(cancellableTask);
+        list.add(cancellable);
         if (isCancelled.get()) {
-            cancellableTask.cancel();
+            cancellable.cancel();
         }
     }
 
     void cancel() {
         if (isCancelled.compareAndSet(false, true)) {
-            for (CancellableTask c : cancellableTasks) {
+            for (Cancellable c : list) {
                 c.cancel();
             }
         }

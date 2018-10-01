@@ -3,7 +3,7 @@ package org.superasync;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 
-public class AsyncObserver<V> implements Observer<V>, CancellableTask {
+public class AsyncObserver<V> implements Observer<V>, CompletableCancellable {
 
     private final Executor executor;
     private final ResultConsumer<V> resultConsumer;
@@ -42,11 +42,6 @@ public class AsyncObserver<V> implements Observer<V>, CancellableTask {
     @Override
     public boolean isDone() {
         return future.isDone();
-    }
-
-    @Override
-    public void run() {
-
     }
 
     private class FutureInner extends FutureValue<V> {
