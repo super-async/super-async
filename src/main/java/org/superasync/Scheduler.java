@@ -1,7 +1,5 @@
 package org.superasync;
 
-import java.util.concurrent.Future;
-
 public interface Scheduler {
-    Future<?> schedule(Runnable task, long delay);
+    CancellableTask.ErrorEmitting schedule(Runnable task, long delay);
 }

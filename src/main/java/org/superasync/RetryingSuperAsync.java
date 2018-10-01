@@ -15,21 +15,21 @@ class RetryingSuperAsync<V> extends SuperAsync<V> {
     }
 
     @Override
-    public void execute(final BaseObserver<V> baseObserver, CancellersHolder cancellersHolder) {
+    public void execute(final BaseObserver<V> baseObserver, Canceller canceller) {
         AtomicInteger count = new AtomicInteger(0);
-        superAsync.execute(new ErrorConsumerInner(baseObserver, count, cancellersHolder), cancellersHolder);
+        superAsync.execute(new ErrorConsumerInner(baseObserver, count, canceller), canceller);
     }
 
     private class ErrorConsumerInner implements BaseObserver<V> {
         private final BaseObserver<V> original;
         private final AtomicInteger count;
-        private final CancellersHolder cancellersHolder;
+        private final Canceller canceller;
 
         ErrorConsumerInner(BaseObserver<V> original, AtomicInteger count,
-                           CancellersHolder cancellersHolder) {
+                           Canceller canceller) {
             this.original = original;
             this.count = count;
-            this.cancellersHolder = cancellersHolder;
+            this.canceller = canceller;
         }
 
         @Override
@@ -44,14 +44,24 @@ class RetryingSuperAsync<V> extends SuperAsync<V> {
                 original.onError(e);
             } else {
                 if (delay == 0L) {
-                    superAsync.execute(this, cancellersHolder);
+                    superAsync.execute(this, canceller);
                 } else {
-                    cancellersHolder.add(ExecutorProviderStaticRef.getExecutorProvider().scheduler().schedule(new Runnable() {
+
+                    CancellableTask.ErrorEmitting cancellable = ExecutorProviderStaticRef.getExecutorProvider().scheduler().schedule(new Runnable() {
                         @Override
                         public void run() {
-                            superAsync.execute(ErrorConsumerInner.this, cancellersHolder);
+                            superAsync.execute(ErrorConsumerInner.this, canceller);
                         }
-                    }, delay));
+                    }, delay);
+
+                    cancellable.setErrorConsumer(new ErrorConsumer() {
+                        @Override
+                        public void onError(Throwable e) {
+                            original.onError(e);
+                        }
+                    });
+
+                    canceller.add(cancellable);
                 }
             }
         }

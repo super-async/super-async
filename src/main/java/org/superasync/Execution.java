@@ -5,10 +5,10 @@ import java.util.concurrent.Future;
 
 public class Execution<V> {
 
-    private final CancellersHolder canceller;
+    private final Canceller canceller;
     private final Future<V> future;
 
-    Execution(CancellersHolder canceller, Future<V> future) {
+    Execution(Canceller canceller, Future<V> future) {
         this.canceller = canceller;
         this.future = future;
     }

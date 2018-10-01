@@ -2,7 +2,6 @@ package org.superasync;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Future;
 
 class SingleSuperAsync<V> extends SuperAsync<V> {
 
@@ -14,8 +13,8 @@ class SingleSuperAsync<V> extends SuperAsync<V> {
     }
 
     @Override
-    public void execute(BaseObserver<V> baseObserver, CancellersHolder cancellersHolder) {
-        Future<V> future = submit(task, baseObserver);
-        cancellersHolder.add(future);
+    public void execute(BaseObserver<V> baseObserver, Canceller canceller) {
+        CancellableTask cancellable = submit(task, baseObserver);
+        canceller.add(cancellable);
     }
 }

@@ -29,10 +29,10 @@ public abstract class SuperAsync<V> {
         this.executor = executor;
     }
 
-    Future<V> submit(Callable<V> task, BaseObserver<V> observer) {
-        SuperFuture<V> future = new SuperFuture<V>(task, observer);
-        executor.execute(future);
-        return future;
+    CancellableTask submit(Callable<V> task, BaseObserver<V> observer) {
+        CancellableTask cancellableTask = CancellableTask.Factory.fromCallable(task, observer);
+        executor.execute(cancellableTask);
+        return cancellableTask;
     }
 
     public final Execution<V> execute(ResultConsumer<V> resultConsumer, ErrorConsumer errorConsumer) {
@@ -52,18 +52,18 @@ public abstract class SuperAsync<V> {
     public final Execution<V> execute(ResultConsumer<V> resultConsumer,
                                    ErrorConsumer errorConsumer,
                                    OnCancelListener onCancelListener, Executor observingExecutor) {
-        CancellersHolder cancellersHolder = new CancellersHolder();
+        Canceller canceller = new Canceller();
         Observer<V> observer = new Observer<V>(
                 observingExecutor != null ? observingExecutor
                         : ExecutorProviderStaticRef.getExecutorProvider().defaultObserving(),
                 resultConsumer, errorConsumer, onCancelListener);
-        cancellersHolder.add(observer.future);
-        execute(observer, cancellersHolder);
-        return new Execution<V>(cancellersHolder, observer.future);
+        canceller.add(observer);
+        execute(observer, canceller);
+        return new Execution<V>(canceller, observer.future);
     }
 
 
-    abstract void execute(BaseObserver<V> observer, CancellersHolder cancellersHolder);
+    abstract void execute(BaseObserver<V> observer, Canceller canceller);
 
     public final <U> SuperAsync<U> andThen(final Transformation<V, U> transformation) {
         return new AndThenSuperAsync<V, U>(executor, this, transformation);

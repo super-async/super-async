@@ -2,7 +2,6 @@ package org.superasync;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class ZipSuperAsync<U, V, R> extends SuperAsync<R> {
@@ -20,39 +19,39 @@ public class ZipSuperAsync<U, V, R> extends SuperAsync<R> {
     }
 
     @Override
-    public void execute(BaseObserver<R> observer, CancellersHolder cancellersHolder) {
+    public void execute(BaseObserver<R> observer, Canceller canceller) {
 
         AtomicReference<Object> firstOne = new AtomicReference<Object>(null);
 
-        superAsync1.execute(new ResultConsumer1(observer, cancellersHolder, firstOne), cancellersHolder);
-        superAsync2.execute(new ResultConsumer2(observer, cancellersHolder, firstOne), cancellersHolder);
+        superAsync1.execute(new ResultConsumer1(observer, canceller, firstOne), canceller);
+        superAsync2.execute(new ResultConsumer2(observer, canceller, firstOne), canceller);
     }
 
     private class ResultConsumer1 implements BaseObserver<U> {
 
-        private final CancellersHolder cancellersHolder;
+        private final Canceller canceller;
         private final BaseObserver<R> observer;
         private final AtomicReference<Object> firstOne;
 
         ResultConsumer1(BaseObserver<R> observer,
-                        CancellersHolder cancellersHolder,
+                        Canceller canceller,
                         AtomicReference<Object> firstOne) {
             this.observer = observer;
-            this.cancellersHolder = cancellersHolder;
+            this.canceller = canceller;
             this.firstOne = firstOne;
         }
 
         @Override
         public void onResult(final U result) {
             if (!firstOne.compareAndSet(null, result)) {
-                Future<R> future = submit(new Callable<R>() {
+                CancellableTask cancellableTask = submit(new Callable<R>() {
                     @Override
                     public R call() throws Exception {
                         //noinspection unchecked
                         return zipFunc.zip(result, (V) firstOne.get());
                     }
                 }, observer);
-                cancellersHolder.add(future);
+                canceller.add(cancellableTask);
             }
         }
 
@@ -69,29 +68,29 @@ public class ZipSuperAsync<U, V, R> extends SuperAsync<R> {
 
     private class ResultConsumer2 implements BaseObserver<V> {
 
-        private final CancellersHolder cancellersHolder;
+        private final Canceller canceller;
         private final BaseObserver<R> observer;
         private final AtomicReference<Object> firstOne;
 
         ResultConsumer2(BaseObserver<R> observer,
-                        CancellersHolder cancellersHolder,
+                        Canceller canceller,
                         AtomicReference<Object> firstOne) {
             this.observer = observer;
-            this.cancellersHolder = cancellersHolder;
+            this.canceller = canceller;
             this.firstOne = firstOne;
         }
 
         @Override
         public void onResult(final V result) {
             if (!firstOne.compareAndSet(null, result)) {
-                Future<R> future = submit(new Callable<R>() {
+                CancellableTask cancellableTask = submit(new Callable<R>() {
                     @Override
                     public R call() throws Exception {
                         //noinspection unchecked
                         return zipFunc.zip((U) firstOne.get(), result);
                     }
                 }, observer);
-                cancellersHolder.add(future);
+                canceller.add(cancellableTask);
             }
         }
 
