@@ -5,7 +5,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 
-public class Observer<V> implements BaseObserver<V>, Canceller {
+public class Observer<V> implements BaseObserver<V> {
 
     private final Executor executor;
     private final ResultConsumer<V> resultConsumer;
@@ -32,18 +32,8 @@ public class Observer<V> implements BaseObserver<V>, Canceller {
     }
 
     @Override
-    public boolean isUseless() {
-        return future.isDone();
-    }
-
-    @Override
     public boolean isObserving() {
         return !future.isDone();
-    }
-
-    @Override
-    public void cancel() {
-        future.cancel(false);
     }
 
     static <V> Future<V> toFuture(BaseObserver<V> observer) {
