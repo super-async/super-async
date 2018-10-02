@@ -19,13 +19,13 @@ class AndThenSuperAsync<U, V> extends SuperAsync<V> {
         original.execute(new Observer<U>() {
             @Override
             public void onResult(final U result) {
-                CancellableTask cancellableTask = submit(new Callable<V>() {
+                Task task = submit(new Callable<V>() {
                     @Override
                     public V call() throws Exception {
                         return transformation.perform(result);
                     }
                 }, observer);
-                canceller.add(cancellableTask);
+                canceller.add(task);
             }
 
             @Override

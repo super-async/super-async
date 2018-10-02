@@ -25,7 +25,7 @@ class DefaultExecutorProviderHolder {
         };
         private final Scheduler scheduler = new Scheduler() {
             @Override
-            public CompletableCancellable.ErrorEmitting schedule(Runnable task, long delay) {
+            public Completable.Cancellable.ErrorEmitting schedule(Runnable task, long delay) {
                 return (DecoratedRunnableScheduledFuture) scheduledExecutorService.schedule(task, delay, TimeUnit.MILLISECONDS);
             }
         };
@@ -65,7 +65,8 @@ class DefaultExecutorProviderHolder {
         return DEFAULT_EXECUTOR_PROVIDER;
     }
 
-    private static class DecoratedRunnableScheduledFuture<T> implements RunnableScheduledFuture<T>, CancellableTask.ErrorEmitting {
+    private static class DecoratedRunnableScheduledFuture<T> implements RunnableScheduledFuture<T>,
+            Completable.Cancellable.ErrorEmitting, Task {
 
         private final RunnableScheduledFuture<T> original;
         private volatile Throwable error = null;

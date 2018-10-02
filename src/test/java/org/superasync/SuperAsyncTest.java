@@ -77,7 +77,7 @@ public class SuperAsyncTest {
         Assert.assertEquals(Boolean.TRUE, SuperAsync.newInstance(Executors.newSingleThreadExecutor(), new Callable<Boolean>() {
             @Override
             public Boolean call() throws Exception {
-                if (++count < 2) {
+                if (++count <= 2) {
                     throw new Exception();
                 }
                 return true;
@@ -85,7 +85,7 @@ public class SuperAsyncTest {
         }).retryWhen(new RetryCondition() {
             @Override
             public long check(Throwable e, int count) {
-                return count < 2 ? 30 : DONT_RETRY;
+                return count <= 2 ? 30 : DONT_RETRY;
             }
         }).execute(null).blockingGet());
     }

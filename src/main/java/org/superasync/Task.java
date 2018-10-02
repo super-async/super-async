@@ -3,15 +3,15 @@ package org.superasync;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-interface CancellableTask extends Runnable, CompletableCancellable {
+interface Task extends Runnable, Completable.Cancellable {
 
     class Factory {
-        static <V> CancellableTask fromCallable(Callable<V> callable, Observer<V> observer) {
+        static <V> Task fromCallable(Callable<V> callable, Observer<V> observer) {
             return new FromCallable<V>(callable, observer);
         }
     }
 
-    class FromCallable<V> implements CancellableTask {
+    class FromCallable<V> implements Task {
 
         private final AtomicBoolean isDone = new AtomicBoolean(false);
         private final Callable<V> task;

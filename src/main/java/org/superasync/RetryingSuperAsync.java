@@ -47,7 +47,7 @@ class RetryingSuperAsync<V> extends SuperAsync<V> {
                     superAsync.execute(this, canceller);
                 } else {
 
-                    CancellableTask.ErrorEmitting cancellable = ExecutorProviderStaticRef.getExecutorProvider().scheduler().schedule(new Runnable() {
+                    Completable.Cancellable.ErrorEmitting cancellable = ExecutorProviderStaticRef.getExecutorProvider().scheduler().schedule(new Runnable() {
                         @Override
                         public void run() {
                             superAsync.execute(ErrorConsumerInner.this, canceller);

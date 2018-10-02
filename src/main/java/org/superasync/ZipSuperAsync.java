@@ -44,14 +44,14 @@ public class ZipSuperAsync<U, V, R> extends SuperAsync<R> {
         @Override
         public void onResult(final U result) {
             if (!firstOne.compareAndSet(null, result)) {
-                CancellableTask cancellableTask = submit(new Callable<R>() {
+                Task task = submit(new Callable<R>() {
                     @Override
                     public R call() throws Exception {
                         //noinspection unchecked
                         return zipFunc.zip(result, (V) firstOne.get());
                     }
                 }, observer);
-                canceller.add(cancellableTask);
+                canceller.add(task);
             }
         }
 
@@ -83,14 +83,14 @@ public class ZipSuperAsync<U, V, R> extends SuperAsync<R> {
         @Override
         public void onResult(final V result) {
             if (!firstOne.compareAndSet(null, result)) {
-                CancellableTask cancellableTask = submit(new Callable<R>() {
+                Task task = submit(new Callable<R>() {
                     @Override
                     public R call() throws Exception {
                         //noinspection unchecked
                         return zipFunc.zip((U) firstOne.get(), result);
                     }
                 }, observer);
-                canceller.add(cancellableTask);
+                canceller.add(task);
             }
         }
 

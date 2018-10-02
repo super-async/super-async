@@ -9,17 +9,17 @@ class Canceller {
 
     private final AtomicBoolean isCancelled = new AtomicBoolean(false);
 
-    private final Collection<CompletableCancellable> collection = new ConcurrentLinkedQueue<CompletableCancellable>();
+    private final Collection<Completable.Cancellable> collection = new ConcurrentLinkedQueue<Completable.Cancellable>();
 
-    void add(CompletableCancellable cancellable) {
+    void add(Completable.Cancellable cancellable) {
         if (isCancelled.get()) {
             cancellable.cancel();
             return;
         }
 
-        Iterator<CompletableCancellable> it = collection.iterator();
+        Iterator<Completable.Cancellable> it = collection.iterator();
         while (it.hasNext()){
-            CompletableCancellable c = it.next();
+            Completable.Cancellable c = it.next();
             if (c.isDone()) {
                 it.remove();
             }
@@ -37,7 +37,7 @@ class Canceller {
 
     void cancel() {
         if (isCancelled.compareAndSet(false, true)) {
-            for (Cancellable c : collection) {
+            for (Completable.Cancellable c : collection) {
                 c.cancel();
             }
         }

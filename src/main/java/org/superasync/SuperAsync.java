@@ -28,8 +28,8 @@ public abstract class SuperAsync<V> {
         this.executor = executor;
     }
 
-    CancellableTask submit(Callable<V> task, Observer<V> observer) {
-        CancellableTask cancellableTask = CancellableTask.Factory.fromCallable(task, observer);
+    Task submit(Callable<V> task, Observer<V> observer) {
+        Task cancellableTask = Task.Factory.fromCallable(task, observer);
         executor.execute(cancellableTask);
         return cancellableTask;
     }

@@ -3,7 +3,7 @@ package org.superasync;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 
-public class AsyncObserver<V> implements Observer<V>, CompletableCancellable {
+public class AsyncObserver<V> implements Observer<V>, Completable.Cancellable {
 
     private final Executor executor;
     private final ResultConsumer<V> resultConsumer;
