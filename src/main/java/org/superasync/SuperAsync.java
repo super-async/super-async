@@ -34,14 +34,18 @@ public abstract class SuperAsync<V> {
         return cancellableTask;
     }
 
-    public final Execution<V> execute(ResultConsumer<V> resultConsumer, ErrorConsumer errorConsumer) {
-        return execute(resultConsumer, errorConsumer, null);
+    public final Execution<V> execute() {
+        return execute(null);
     }
 
     public final Execution<V> execute(ResultConsumer<V> resultConsumer) {
         return execute(resultConsumer, null);
     }
 
+
+    public final Execution<V> execute(ResultConsumer<V> resultConsumer, ErrorConsumer errorConsumer) {
+        return execute(resultConsumer, errorConsumer, null);
+    }
 
     public final Execution<V> execute(ResultConsumer<V> resultConsumer, ErrorConsumer errorConsumer,
                                    OnCancelListener onCancelListener) {

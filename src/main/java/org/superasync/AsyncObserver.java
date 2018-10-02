@@ -44,6 +44,52 @@ public class AsyncObserver<V> implements Observer<V>, Completable.Cancellable {
         return future.isDone();
     }
 
+    private void deliverResult(final V result) {
+        if (resultConsumer == null) {
+            return;
+        }
+        executor.execute(new Runnable() {
+
+            @Override
+            public void run() {
+                try {
+                    resultConsumer.onResult(result);
+                } catch (Exception e) {
+                    errorConsumer.onError(e);
+                }
+            }
+        });
+    }
+
+    private void deliverError(final Throwable error) {
+        if (errorConsumer == null) {
+            throw new RuntimeException(error);
+        }
+        executor.execute(new Runnable() {
+            @Override
+            public void run() {
+                errorConsumer.onError(error);
+            }
+        });
+    }
+
+    private void deliverCancellation() {
+        if (onCancelListener == null) {
+            return;
+        }
+        executor.execute(new Runnable() {
+
+            @Override
+            public void run() {
+                try {
+                    onCancelListener.onCancel();
+                } catch (Exception e) {
+                    errorConsumer.onError(e);
+                }
+            }
+        });
+    }
+
     private class FutureInner extends FutureValue<V> {
 
         FutureInner() {
@@ -62,49 +108,22 @@ public class AsyncObserver<V> implements Observer<V>, Completable.Cancellable {
 
         @Override
         protected void done() {
+            V result;
+            Exception exception;
             try {
-                final V result = get();
-                if (resultConsumer == null) {
-                    return;
-                }
-                executor.execute(new Runnable() {
+                result = get();
+                exception = null;
+            } catch (Exception e) {
+                result = null;
+                exception = e;
+            }
 
-                    @Override
-                    public void run() {
-                        try {
-                            resultConsumer.onResult(result);
-                        } catch (Exception e) {
-                            errorConsumer.onError(e);
-                        }
-                    }
-                });
-            } catch (final Exception e) {
-                if (e instanceof ExecutionException) {
-                    if (errorConsumer == null) {
-                        throw new RuntimeException(e);
-                    }
-                    executor.execute(new Runnable() {
-                        @Override
-                        public void run() {
-                            errorConsumer.onError(e);
-                        }
-                    });
-                } else {
-                    if (onCancelListener == null) {
-                        return;
-                    }
-                    executor.execute(new Runnable() {
-
-                        @Override
-                        public void run() {
-                            try {
-                                onCancelListener.onCancel();
-                            } catch (Exception e) {
-                                errorConsumer.onError(e);
-                            }
-                        }
-                    });
-                }
+            if (exception == null) {
+                deliverResult(result);
+            } else if (exception instanceof ExecutionException) {
+                deliverError(exception.getCause());
+            } else {
+                deliverCancellation();
             }
         }
     }
