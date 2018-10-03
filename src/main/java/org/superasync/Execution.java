@@ -13,8 +13,8 @@ public class Execution<V> {
         this.future = future;
     }
 
-    public void cancel() {
-        canceller.cancel();
+    public boolean cancel() {
+        return canceller.cancel(false);
     }
 
     V blockingGet() throws ExecutionException, InterruptedException {
