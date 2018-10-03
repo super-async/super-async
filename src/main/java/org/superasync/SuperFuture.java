@@ -59,10 +59,9 @@ public class SuperFuture<V> implements Future<V>, Completable.Cancellable {
     private void done() {
         countDownLatch.countDown();
         if (state.get() != CANCELLED) {
-            notifyCallbacks();
+            callbacks.notifyCallbacks();
         }
     }
-
 
     @Override
     public V get() throws InterruptedException, ExecutionException {
@@ -118,29 +117,22 @@ public class SuperFuture<V> implements Future<V>, Completable.Cancellable {
         callbacks.remove(callback);
     }
 
-    private void notifyCallbacks() {
-        callbacks.notifyCallbacks();
-    }
-
-    private void notifyCallback(Callback<V> callback) {
-        switch (state.get()) {
-            case SET:
-                //noinspection unchecked
-                callback.onResult((V) result);
-                break;
-            case EXCEPTIONAL:
-                callback.onError((Throwable) result);
-                break;
-            case TIMEOUT:
-                callback.onError(new TimeoutException());
-                break;
-        }
-    }
 
     private class CallbacksInner extends Callbacks<Callback<V>> {
         @Override
         void notifyCallback(Callback<V> callback) {
-            SuperFuture.this.notifyCallback(callback);
+            switch (state.get()) {
+                case SET:
+                    //noinspection unchecked
+                    callback.onResult((V) result);
+                    break;
+                case EXCEPTIONAL:
+                    callback.onError((Throwable) result);
+                    break;
+                case TIMEOUT:
+                    callback.onError(new TimeoutException());
+                    break;
+            }
         }
     }
 
