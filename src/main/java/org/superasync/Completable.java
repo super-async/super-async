@@ -4,7 +4,7 @@ public interface Completable {
     boolean isDone();
 
     interface Cancellable extends Completable {
-        void cancel();
+        boolean cancel(boolean mayInterruptIfRunning);
 
         interface ErrorEmitting extends Completable.ErrorEmitting, Cancellable {
         }

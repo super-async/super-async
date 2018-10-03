@@ -16,6 +16,7 @@ interface Task extends Runnable, Completable.Cancellable {
         private final AtomicBoolean isDone = new AtomicBoolean(false);
         private final Callable<V> task;
         private final Observer<V> observer;
+        private volatile Thread runner;
         private V result;
 
         FromCallable(Callable<V> task, Observer<V> observer) {
@@ -25,6 +26,7 @@ interface Task extends Runnable, Completable.Cancellable {
 
         @Override
         public void run() {
+            runner = Thread.currentThread();
             try {
                 result = task.call();
             } catch (Exception e) {
@@ -38,8 +40,17 @@ interface Task extends Runnable, Completable.Cancellable {
         }
 
         @Override
-        public void cancel() {
-            isDone.compareAndSet(false, true);
+        public boolean cancel(boolean mayInterruptIfRunning) {
+            if (isDone.compareAndSet(false, true)) {
+                if (mayInterruptIfRunning) {
+                    Thread r = runner;
+                    if (r != null) {
+                        r.interrupt();
+                    }
+                }
+                return true;
+            }
+            return false;
         }
 
         @Override

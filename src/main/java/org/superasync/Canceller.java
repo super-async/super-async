@@ -13,7 +13,7 @@ class Canceller {
 
     void add(Completable.Cancellable cancellable) {
         if (isCancelled.get()) {
-            cancellable.cancel();
+            cancellable.cancel(false);
             return;
         }
 
@@ -31,14 +31,14 @@ class Canceller {
 
         collection.add(cancellable);
         if (isCancelled.get()) {
-            cancellable.cancel();
+            cancellable.cancel(false);
         }
     }
 
     void cancel() {
         if (isCancelled.compareAndSet(false, true)) {
             for (Completable.Cancellable c : collection) {
-                c.cancel();
+                c.cancel(false);
             }
         }
     }

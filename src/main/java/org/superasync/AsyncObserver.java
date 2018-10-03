@@ -35,8 +35,8 @@ public class AsyncObserver<V> implements Observer<V>, Completable.Cancellable {
     }
 
     @Override
-    public void cancel() {
-        future.cancel(false);
+    public boolean cancel(boolean mayInterruptIfRunning) {
+        return future.cancel(false);
     }
 
     @Override

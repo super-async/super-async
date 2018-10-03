@@ -133,11 +133,6 @@ class DefaultExecutorProviderHolder {
         }
 
         @Override
-        public void cancel() {
-            cancel(false);
-        }
-
-        @Override
         public boolean isDone() {
             return original.isDone();
         }
