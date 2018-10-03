@@ -10,7 +10,7 @@ public class SuperFuture<V> implements Future<V>, Completable.Cancellable {
     private final CountDownLatch countDownLatch = new CountDownLatch(1);
     private final AtomicInteger state = new AtomicInteger(WAITING);
     private Object result;
-    private final Notifier<Callback<V>> notifier = new NotifierInner();
+    private final Notifier<Observer<V>> notifier = new NotifierInner();
     private final Callback<V> callbackInterface = new CallbackInterface();
     private final org.superasync.Cancellable cancellationDelegate;
 
@@ -105,22 +105,13 @@ public class SuperFuture<V> implements Future<V>, Completable.Cancellable {
                 observingExecutor != null ? observingExecutor : ExecutorProviderStaticRef.getExecutorProvider().defaultObserving(),
                 resultConsumer,
                 errorConsumer);
-        addCallback(observer);
-        return new Observation<V>(observer, this);
+        Wrapper<Observer<V>> w = notifier.add(observer);
+        return new Observation<V>(w, this);
     }
 
-    private void addCallback(Callback<V> callback) {
-        notifier.add(callback);
-    }
-
-    void removeCallback(Callback<V> callback) {
-        notifier.remove(callback);
-    }
-
-
-    private class NotifierInner extends Notifier<Callback<V>> {
+    private class NotifierInner extends Notifier<Observer<V>> {
         @Override
-        void notifyCallback(Callback<V> callback) {
+        void notifyCallback(Observer<V> callback) {
             switch (state.get()) {
                 case SET:
                     //noinspection unchecked

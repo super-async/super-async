@@ -1,17 +1,17 @@
 package org.superasync;
 
-public class Observation<V> {
+class Observation<V> {
 
-    private final Observer<V> observer;
+    private final Wrapper<Observer<V>> observer;
     private final SuperFuture<V> future;
 
-    Observation(Observer<V> observer, SuperFuture<V> future) {
+    Observation(Wrapper<Observer<V>> observer, SuperFuture<V> future) {
         this.observer = observer;
         this.future = future;
     }
 
     void stopObservation() {
-        future.removeCallback(observer);
+        observer.remove();
     }
     SuperFuture future() {
         return future;
