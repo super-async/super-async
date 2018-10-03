@@ -10,7 +10,7 @@ public class SuperFuture<V> implements Future<V>, Completable.Cancellable {
     private final CountDownLatch countDownLatch = new CountDownLatch(1);
     private final AtomicInteger state = new AtomicInteger(WAITING);
     private Object result;
-    private final Callbacks<Callback<V>> callbacks = new CallbacksInner();
+    private final Notifier<Callback<V>> notifier = new NotifierInner();
     private final Callback<V> callbackInterface = new CallbackInterface();
     private final org.superasync.Cancellable cancellationDelegate;
 
@@ -59,7 +59,7 @@ public class SuperFuture<V> implements Future<V>, Completable.Cancellable {
     private void done() {
         countDownLatch.countDown();
         if (state.get() != CANCELLED) {
-            callbacks.notifyCallbacks();
+            notifier.notifyCallbacks();
         }
     }
 
@@ -110,15 +110,15 @@ public class SuperFuture<V> implements Future<V>, Completable.Cancellable {
     }
 
     private void addCallback(Callback<V> callback) {
-        callbacks.add(callback);
+        notifier.add(callback);
     }
 
     void removeCallback(Callback<V> callback) {
-        callbacks.remove(callback);
+        notifier.remove(callback);
     }
 
 
-    private class CallbacksInner extends Callbacks<Callback<V>> {
+    private class NotifierInner extends Notifier<Callback<V>> {
         @Override
         void notifyCallback(Callback<V> callback) {
             switch (state.get()) {

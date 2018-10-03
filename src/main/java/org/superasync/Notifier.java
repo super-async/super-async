@@ -3,7 +3,7 @@ package org.superasync;
 import java.util.ArrayList;
 import java.util.Collection;
 
-abstract class Callbacks<C> {
+abstract class Notifier<C> {
     private final Collection<C> collection = new ArrayList<C>();
     private boolean notified = false;
 
