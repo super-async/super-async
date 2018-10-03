@@ -28,45 +28,39 @@ public abstract class SuperAsync<V> {
         this.executor = executor;
     }
 
-    Task submit(Callable<V> task, Observer<V> observer) {
-        Task cancellableTask = Task.Factory.fromCallable(task, observer);
+    Task submit(Callable<V> task, Callback<V> callback) {
+        Task cancellableTask = Task.Factory.fromCallable(task, callback);
         executor.execute(cancellableTask);
         return cancellableTask;
     }
 
-    public final Execution<V> execute() {
-        return execute(null);
+    public final SuperFuture<V> execute() {
+        Canceller canceller = new Canceller();
+        SuperFuture<V> future = new SuperFuture<V>(canceller);
+        execute(future.asCallback(), canceller);
+        return future;
     }
 
-    public final Execution<V> execute(ResultConsumer<V> resultConsumer) {
+    public final Observation<V> execute(ResultConsumer<V> resultConsumer) {
         return execute(resultConsumer, null);
     }
 
 
-    public final Execution<V> execute(ResultConsumer<V> resultConsumer, ErrorConsumer errorConsumer) {
+    public final Observation<V> execute(ResultConsumer<V> resultConsumer, ErrorConsumer errorConsumer) {
         return execute(resultConsumer, errorConsumer, null);
     }
 
-    public final Execution<V> execute(ResultConsumer<V> resultConsumer, ErrorConsumer errorConsumer,
-                                   OnCancelListener onCancelListener) {
-        return execute(resultConsumer, errorConsumer, onCancelListener, null);
-    }
-
-    public final Execution<V> execute(ResultConsumer<V> resultConsumer,
-                                   ErrorConsumer errorConsumer,
-                                   OnCancelListener onCancelListener, Executor observingExecutor) {
+    public final Observation<V> execute(ResultConsumer<V> resultConsumer,
+                                   ErrorConsumer errorConsumer,  Executor observingExecutor) {
         Canceller canceller = new Canceller();
-        AsyncObserver<V> observer = new AsyncObserver<V>(
-                observingExecutor != null ? observingExecutor
-                        : ExecutorProviderStaticRef.getExecutorProvider().defaultObserving(),
-                resultConsumer, errorConsumer, onCancelListener);
-        canceller.add(observer);
-        execute(observer, canceller);
-        return new Execution<V>(canceller, observer.future);
+        SuperFuture<V> future = new SuperFuture<V>(canceller);
+        Observation<V> observation = future.observe(resultConsumer, errorConsumer, observingExecutor);
+        execute(future.asCallback(), canceller);
+        return observation;
     }
 
 
-    abstract void execute(Observer<V> observer, Canceller canceller);
+    abstract void execute(Callback<V> callback, Canceller canceller);
 
     public final <U> SuperAsync<U> andThen(final Transformation<V, U> transformation) {
         return new AndThenSuperAsync<V, U>(executor, this, transformation);

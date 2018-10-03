@@ -15,17 +15,17 @@ class RetryingSuperAsync<V> extends SuperAsync<V> {
     }
 
     @Override
-    public void execute(final Observer<V> observer, Canceller canceller) {
+    public void execute(final Callback<V> callback, Canceller canceller) {
         AtomicInteger count = new AtomicInteger(0);
-        superAsync.execute(new ErrorConsumerInner(observer, count, canceller), canceller);
+        superAsync.execute(new ErrorConsumerInner(callback, count, canceller), canceller);
     }
 
-    private class ErrorConsumerInner implements Observer<V> {
-        private final Observer<V> original;
+    private class ErrorConsumerInner implements Callback<V> {
+        private final Callback<V> original;
         private final AtomicInteger count;
         private final Canceller canceller;
 
-        ErrorConsumerInner(Observer<V> original, AtomicInteger count,
+        ErrorConsumerInner(Callback<V> original, AtomicInteger count,
                            Canceller canceller) {
             this.original = original;
             this.count = count;
@@ -54,21 +54,11 @@ class RetryingSuperAsync<V> extends SuperAsync<V> {
                         }
                     }, delay);
 
-                    cancellable.setErrorConsumer(new ErrorConsumer() {
-                        @Override
-                        public void onError(Throwable e) {
-                            original.onError(e);
-                        }
-                    });
+                    cancellable.setErrorConsumer(original);
 
                     canceller.add(cancellable);
                 }
             }
-        }
-
-        @Override
-        public boolean isObserving() {
-            return original.isObserving();
         }
     }
 }

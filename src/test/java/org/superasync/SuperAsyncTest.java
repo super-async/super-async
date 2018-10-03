@@ -87,7 +87,7 @@ public class SuperAsyncTest {
             public long check(Throwable e, int count) {
                 return count <= 2 ? 30 : DONT_RETRY;
             }
-        }).execute().blockingGet());
+        }).execute().get());
     }
 
     private <T> SuperAsync<T> testInstance(Callable<T> callable) {

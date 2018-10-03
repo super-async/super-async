@@ -13,8 +13,8 @@ class SingleSuperAsync<V> extends SuperAsync<V> {
     }
 
     @Override
-    public void execute(Observer<V> observer, Canceller canceller) {
-        Task cancellable = submit(task, observer);
+    public void execute(Callback<V> callback, Canceller canceller) {
+        Task cancellable = submit(task, callback);
         canceller.add(cancellable);
     }
 }

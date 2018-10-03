@@ -6,8 +6,8 @@ import java.util.concurrent.atomic.AtomicReference;
 interface Task extends Runnable, Completable.Cancellable {
 
     class Factory {
-        static <V> Task fromCallable(Callable<V> callable, Observer<V> observer) {
-            return new FromCallable<V>(callable, observer);
+        static <V> Task fromCallable(Callable<V> callable, Callback<V> callback) {
+            return new FromCallable<V>(callable, callback);
         }
     }
 
@@ -17,13 +17,13 @@ interface Task extends Runnable, Completable.Cancellable {
 
         private final AtomicReference<State> state = new AtomicReference<State>(State.INITIAL);
         private final Callable<V> task;
-        private final Observer<V> observer;
+        private final Callback<V> callback;
         private volatile Thread runner;
         private V result;
 
-        FromCallable(Callable<V> task, Observer<V> observer) {
+        FromCallable(Callable<V> task, Callback<V> callback) {
             this.task = task;
-            this.observer = observer;
+            this.callback = callback;
         }
 
         @Override
@@ -36,11 +36,11 @@ interface Task extends Runnable, Completable.Cancellable {
                 result = task.call();
             } catch (Exception e) {
                 if (state.compareAndSet(State.RUNNING, State.DONE)) {
-                    observer.onError(e);
+                    callback.onError(e);
                 }
             }
             if (state.compareAndSet(State.RUNNING, State.DONE)) {
-                observer.onResult(result);
+                callback.onResult(result);
             }
         }
 
