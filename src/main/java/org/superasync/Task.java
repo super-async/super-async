@@ -1,7 +1,7 @@
 package org.superasync;
 
 import java.util.concurrent.Callable;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 interface Task extends Runnable, Completable.Cancellable {
 
@@ -13,7 +13,9 @@ interface Task extends Runnable, Completable.Cancellable {
 
     class FromCallable<V> implements Task {
 
-        private final AtomicBoolean isDone = new AtomicBoolean(false);
+        private enum State {INITIAL, RUNNING, DONE}
+
+        private final AtomicReference<State> state = new AtomicReference<State>(State.INITIAL);
         private final Callable<V> task;
         private final Observer<V> observer;
         private volatile Thread runner;
@@ -26,36 +28,42 @@ interface Task extends Runnable, Completable.Cancellable {
 
         @Override
         public void run() {
+            if (!state.compareAndSet(State.INITIAL, State.RUNNING)) {
+                return;
+            }
             runner = Thread.currentThread();
             try {
                 result = task.call();
             } catch (Exception e) {
-                if (isDone.compareAndSet(false, true)) {
+                if (state.compareAndSet(State.RUNNING, State.DONE)) {
                     observer.onError(e);
                 }
             }
-            if (isDone.compareAndSet(false, true)) {
+            if (state.compareAndSet(State.RUNNING, State.DONE)) {
                 observer.onResult(result);
             }
         }
 
         @Override
         public boolean cancel(boolean mayInterruptIfRunning) {
-            if (isDone.compareAndSet(false, true)) {
-                if (mayInterruptIfRunning) {
-                    Thread r = runner;
-                    if (r != null) {
-                        r.interrupt();
-                    }
-                }
-                return true;
+
+            State old = state.getAndSet(State.DONE);
+            if (old == State.DONE) {
+                return false;
             }
-            return false;
+
+            if (mayInterruptIfRunning) {
+                Thread r = runner;
+                if (r != null) {
+                    r.interrupt();
+                }
+            }
+            return true;
         }
 
         @Override
         public boolean isDone() {
-            return isDone.get();
+            return state.get() == State.DONE;
         }
     }
 }
