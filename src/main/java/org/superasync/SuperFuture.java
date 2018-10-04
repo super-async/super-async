@@ -58,9 +58,7 @@ public class SuperFuture<V> implements Future<V>, Completable.Cancellable {
 
     private void done() {
         countDownLatch.countDown();
-        if (state.get() != CANCELLED) {
-            publisher.publishDone();
-        }
+        publisher.publishRevision(state.get());
     }
 
     @Override
@@ -112,19 +110,12 @@ public class SuperFuture<V> implements Future<V>, Completable.Cancellable {
     private class PublisherInner extends Publisher<Observer<V>> {
 
         PublisherInner() {
-            super(0);
-        }
-
-        void publishDone() {
-            publishRevision(1);
+            super(WAITING);
         }
 
         @Override
         void notifySubscriber(int revision, Observer<V> observer) {
-            if (!revisionIsFinal(revision)) {
-                return;
-            }
-            switch (state.get()) {
+            switch (revision) {
                 case SET:
                     //noinspection unchecked
                     observer.onResult((V) result);
@@ -140,7 +131,7 @@ public class SuperFuture<V> implements Future<V>, Completable.Cancellable {
 
         @Override
         boolean revisionIsFinal(int revision) {
-            return revision == 1;
+            return revision > WAITING;
         }
     }
 
