@@ -19,13 +19,12 @@ class AndThenSuperAsync<U, V> extends SuperAsync<V> {
         original.execute(new Callback<U>() {
             @Override
             public void onResult(final U result) {
-                Task task = submit(new Callable<V>() {
+                submit(new Callable<V>() {
                     @Override
                     public V call() throws Exception {
                         return transformation.perform(result);
                     }
-                }, callback);
-                canceller.add(task);
+                }, callback, canceller);
             }
 
             @Override

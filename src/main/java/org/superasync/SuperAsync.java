@@ -28,10 +28,10 @@ public abstract class SuperAsync<V> {
         this.executor = executor;
     }
 
-    Task submit(Callable<V> task, Callback<V> callback) {
-        Task cancellableTask = Task.Factory.fromCallable(task, callback);
-        executor.execute(cancellableTask);
-        return cancellableTask;
+    void submit(Callable<V> callable, Callback<V> callback, Canceller canceller) {
+        Task task = Task.Factory.fromCallable(callable, callback);
+        canceller.add(task);
+        executor.execute(task);
     }
 
     public final SuperFuture<V> execute() {

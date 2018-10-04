@@ -29,16 +29,12 @@ abstract class Publisher<S> {
 
     private boolean onPublishRevision(int old, int revision) {
         if (old != revision) {
-            updateWrappers(revision);
+            for (Wrapper w : wrappers) {
+                w.update(revision);
+            }
             return true;
         }
         return false;
-    }
-
-    private void updateWrappers(int revision) {
-        for (Wrapper w : wrappers) {
-            w.update(revision);
-        }
     }
 
     Wrapper subscribe(S subscriber) {
