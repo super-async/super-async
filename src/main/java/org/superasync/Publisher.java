@@ -7,9 +7,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 abstract class Publisher<S> {
     private final AtomicInteger revision;
     final Collection<Wrapper> wrappers = new ConcurrentLinkedQueue<Wrapper>();
+    private final int initialRevision;
 
     Publisher(int initialRevision) {
         revision = new AtomicInteger(initialRevision);
+        this.initialRevision = initialRevision;
     }
 
     boolean publishRevision(int revision) {
@@ -22,7 +24,7 @@ abstract class Publisher<S> {
     }
 
     private void updateWrappers(int revision) {
-        for (Wrapper w:wrappers) {
+        for (Wrapper w : wrappers) {
             w.update(revision);
         }
     }
@@ -30,7 +32,8 @@ abstract class Publisher<S> {
     Wrapper subscribe(S subscriber) {
 
         int currentRevision = revision.get();
-        Wrapper wrapper = new Wrapper(subscriber, currentRevision);
+        Wrapper wrapper = new Wrapper(subscriber);
+        wrapper.update(currentRevision);
 
         if (revisionIsFinal(currentRevision)) {
             return wrapper;
@@ -52,11 +55,9 @@ abstract class Publisher<S> {
 
         private final S subscriber;
         private final AtomicInteger revision;
-
-        Wrapper(S subscriber, int revision) {
+        Wrapper(S subscriber) {
             this.subscriber = subscriber;
-            this.revision = new AtomicInteger(revision);
-            notifySubscriber(revision, subscriber);
+            this.revision = new AtomicInteger(initialRevision);
         }
 
         void update(int revision) {
