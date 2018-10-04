@@ -114,7 +114,8 @@ public class SuperFuture<V> implements Future<V>, Completable.Cancellable {
         }
 
         @Override
-        void notifySubscriber(int revision, Observer<V> observer) {
+        void notifySubscriber(int revision, Wrapper wrapper) {
+            Observer<V> observer = wrapper.getObject();
             switch (revision) {
                 case SET:
                     //noinspection unchecked
@@ -127,11 +128,7 @@ public class SuperFuture<V> implements Future<V>, Completable.Cancellable {
                     observer.onError(new TimeoutException());
                     break;
             }
-        }
-
-        @Override
-        boolean revisionIsFinal(int revision) {
-            return revision > WAITING;
+            wrapper.remove();
         }
     }
 

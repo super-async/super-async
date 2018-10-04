@@ -12,7 +12,7 @@ class Canceller extends Publisher<Completable.Cancellable> implements Cancellabl
 
     @Override
     public boolean cancel(boolean mayInterruptIfRunning) {
-        return publishRevision(mayInterruptIfRunning ? INTERRUPTED : CANCELLED);
+        return compareAndPublishRevision(INITIAL, mayInterruptIfRunning ? INTERRUPTED : CANCELLED);
     }
 
     void add(Completable.Cancellable cancellable) {
@@ -26,19 +26,13 @@ class Canceller extends Publisher<Completable.Cancellable> implements Cancellabl
     }
 
     @Override
-    void notifySubscriber(int revision, Completable.Cancellable cancellable) {
+    void notifySubscriber(int revision, Wrapper wrapper) {
         switch (revision) {
             case CANCELLED:
-                cancellable.cancel(false);
-                break;
             case INTERRUPTED:
-                cancellable.cancel(true);
+                wrapper.getObject().cancel(revision == INTERRUPTED);
+                wrapper.remove();
                 break;
         }
-    }
-
-    @Override
-    boolean revisionIsFinal(int revision) {
-        return revision > INITIAL;
     }
 }

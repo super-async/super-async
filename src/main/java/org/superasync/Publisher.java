@@ -16,6 +16,18 @@ abstract class Publisher<S> {
 
     boolean publishRevision(int revision) {
         int old = this.revision.getAndSet(revision);
+        return onPublishRevision(old, revision);
+    }
+
+    boolean compareAndPublishRevision(int expect, int revision) {
+        if (!this.revision.compareAndSet(expect, revision)) {
+            return false;
+        }
+
+        return onPublishRevision(expect, revision);
+    }
+
+    private boolean onPublishRevision(int old, int revision) {
         if (old != revision) {
             updateWrappers(revision);
             return true;
@@ -35,10 +47,6 @@ abstract class Publisher<S> {
         Wrapper wrapper = new Wrapper(subscriber);
         wrapper.update(currentRevision);
 
-        if (revisionIsFinal(currentRevision)) {
-            return wrapper;
-        }
-
         wrappers.add(wrapper);
 
         wrapper.update(revision.get());
@@ -47,14 +55,13 @@ abstract class Publisher<S> {
     }
 
 
-    abstract void notifySubscriber(int revision, S subscriber);
-
-    abstract boolean revisionIsFinal(int revision);
+    abstract void notifySubscriber(int revision, Wrapper wrapper);
 
     class Wrapper implements Removable {
 
         private final S subscriber;
         private final AtomicInteger revision;
+
         Wrapper(S subscriber) {
             this.subscriber = subscriber;
             this.revision = new AtomicInteger(initialRevision);
@@ -63,10 +70,7 @@ abstract class Publisher<S> {
         void update(int revision) {
             int old = this.revision.getAndSet(revision);
             if (old != revision) {
-                notifySubscriber(revision, subscriber);
-                if (revisionIsFinal(revision)) {
-                    remove();
-                }
+                notifySubscriber(revision, this);
             }
         }
 

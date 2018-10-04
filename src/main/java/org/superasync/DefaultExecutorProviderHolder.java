@@ -96,17 +96,13 @@ class DefaultExecutorProviderHolder {
         }
 
         @Override
-        boolean revisionIsFinal(int revision) {
-            return revision == 1;
-        }
-
-        @Override
-        void notifySubscriber(int revision, ErrorConsumer subscriber) {
-            if (revisionIsFinal(revision)) {
+        void notifySubscriber(int revision, Wrapper wrapper) {
+            if (revision == 1) {
                 try {
                     get();
                 } catch (ExecutionException e) {
-                    subscriber.onError(e);
+                    wrapper.getObject().onError(e);
+                    wrapper.remove();
                 } catch (InterruptedException ignore) {
                 }
             }
