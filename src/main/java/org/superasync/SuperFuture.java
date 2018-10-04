@@ -10,7 +10,7 @@ public class SuperFuture<V> implements Future<V>, Completable.Cancellable {
     private final CountDownLatch countDownLatch = new CountDownLatch(1);
     private final AtomicInteger state = new AtomicInteger(WAITING);
     private Object result;
-    private final Notifier<Observer<V>> notifier = new NotifierInner();
+    private final PublisherInner publisher = new PublisherInner();
     private final Callback<V> callbackInterface = new CallbackInterface();
     private final org.superasync.Cancellable cancellationDelegate;
 
@@ -59,7 +59,7 @@ public class SuperFuture<V> implements Future<V>, Completable.Cancellable {
     private void done() {
         countDownLatch.countDown();
         if (state.get() != CANCELLED) {
-            notifier.notifyCallbacks();
+            publisher.publishDone();
         }
     }
 
@@ -105,25 +105,42 @@ public class SuperFuture<V> implements Future<V>, Completable.Cancellable {
                 observingExecutor != null ? observingExecutor : ExecutorProviderStaticRef.getExecutorProvider().defaultObserving(),
                 resultConsumer,
                 errorConsumer);
-        Removable w = notifier.add(observer);
+        Removable w = publisher.subscribe(observer);
         return new Observation<V>(w, this);
     }
 
-    private class NotifierInner extends Notifier<Observer<V>> {
+    private class PublisherInner extends Publisher<Observer<V>> {
+
+        PublisherInner() {
+            super(0);
+        }
+
+        void publishDone() {
+            publishRevision(1);
+        }
+
         @Override
-        void notifyCallback(Observer<V> callback) {
+        void notifySubscriber(int revision, Observer<V> observer) {
+            if (!revisionIsFinal(revision)) {
+                return;
+            }
             switch (state.get()) {
                 case SET:
                     //noinspection unchecked
-                    callback.onResult((V) result);
+                    observer.onResult((V) result);
                     break;
                 case EXCEPTIONAL:
-                    callback.onError((Throwable) result);
+                    observer.onError((Throwable) result);
                     break;
                 case TIMEOUT:
-                    callback.onError(new TimeoutException());
+                    observer.onError(new TimeoutException());
                     break;
             }
+        }
+
+        @Override
+        boolean revisionIsFinal(int revision) {
+            return revision == 1;
         }
     }
 

@@ -1,7 +1,6 @@
 package org.superasync;
 
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 class DefaultExecutorProviderHolder {
 
@@ -65,15 +64,13 @@ class DefaultExecutorProviderHolder {
         return DEFAULT_EXECUTOR_PROVIDER;
     }
 
-    private static class DecoratedRunnableScheduledFuture<T> implements RunnableScheduledFuture<T>,
+    private static class DecoratedRunnableScheduledFuture<T> extends Publisher<ErrorConsumer> implements RunnableScheduledFuture<T>,
             Completable.Cancellable.ErrorEmitting, Task {
 
         private final RunnableScheduledFuture<T> original;
-        private volatile Throwable error = null;
-        private volatile ErrorConsumer errorConsumer = null;
-        private final AtomicBoolean errorHandled = new AtomicBoolean(false);
 
         DecoratedRunnableScheduledFuture(RunnableScheduledFuture<T> original) {
+            super(0);
             this.original = original;
         }
 
@@ -95,31 +92,29 @@ class DefaultExecutorProviderHolder {
         @Override
         public void run() {
             original.run();
-            //noinspection CatchMayIgnoreException
-            try {
-                get();
-            } catch (Exception e) {
-                if (e instanceof ExecutionException) {
-                    error = e.getCause();
-                    if (errorConsumer != null) {
-                        handleError(error);
-                    }
+            publishRevision(1);
+        }
+
+        @Override
+        boolean revisionIsFinal(int revision) {
+            return revision == 1;
+        }
+
+        @Override
+        void notifySubscriber(int revision, ErrorConsumer subscriber) {
+            if (revisionIsFinal(revision)) {
+                try {
+                    get();
+                } catch (ExecutionException e) {
+                    subscriber.onError(e);
+                } catch (InterruptedException ignore) {
                 }
             }
         }
 
         @Override
         public void setErrorConsumer(ErrorConsumer errorConsumer) {
-            this.errorConsumer = errorConsumer;
-            if (error != null) {
-                handleError(error);
-            }
-        }
-
-        private void handleError(Throwable error) {
-            if (errorHandled.compareAndSet(false, true)) {
-                errorConsumer.onError(error);
-            }
+            subscribe(errorConsumer);
         }
 
         @Override
