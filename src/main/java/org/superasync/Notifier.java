@@ -33,7 +33,7 @@ abstract class Notifier<C> {
 
     abstract void notifyCallback(C callback);
 
-    class Wrapper implements org.superasync.Wrapper<C> {
+    class Wrapper implements Removable {
         private final C callback;
         private AtomicBoolean isNotified = new AtomicBoolean(false);
 

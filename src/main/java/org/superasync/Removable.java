@@ -1,5 +1,5 @@
 package org.superasync;
 
-interface Wrapper<T> {
+interface Removable {
     void remove();
 }

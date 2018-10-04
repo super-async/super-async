@@ -105,7 +105,7 @@ public class SuperFuture<V> implements Future<V>, Completable.Cancellable {
                 observingExecutor != null ? observingExecutor : ExecutorProviderStaticRef.getExecutorProvider().defaultObserving(),
                 resultConsumer,
                 errorConsumer);
-        Wrapper<Observer<V>> w = notifier.add(observer);
+        Removable w = notifier.add(observer);
         return new Observation<V>(w, this);
     }
 
