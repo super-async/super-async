@@ -1,41 +1,38 @@
 package org.superasync;
 
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.Iterator;
 
-class Canceller {
+class Canceller extends Publisher<Completable.Cancellable> implements Cancellable {
 
-    private final AtomicBoolean isCancelled = new AtomicBoolean(false);
+    private static final int INITIAL = 0, CANCELLED = 1, INTERRUPTED = 2;
 
-    private final CopyOnWriteArrayList<CompletableCancellable> list = new CopyOnWriteArrayList<CompletableCancellable>() ;
+    Canceller() {
+        super(INITIAL);
+    }
 
-    void add(CompletableCancellable cancellable) {
-        if (isCancelled.get()) {
-            cancellable.cancel();
-            return;
-        }
+    @Override
+    public boolean cancel(boolean mayInterruptIfRunning) {
+        return compareAndPublishRevision(INITIAL, mayInterruptIfRunning ? INTERRUPTED : CANCELLED);
+    }
 
-        for (CompletableCancellable c : list) {
-            if (c.isDone()) {
-                list.remove(c);
+    void add(Completable.Cancellable cancellable) {
+        subscribe(cancellable);
+        Iterator<Wrapper> iterator = wrappers.iterator();
+        while (iterator.hasNext()) {
+            if (iterator.next().getObject().isDone()) {
+                iterator.remove();
             }
-        }
-
-        if (cancellable.isDone()) {
-            return;
-        }
-
-        list.add(cancellable);
-        if (isCancelled.get()) {
-            cancellable.cancel();
         }
     }
 
-    void cancel() {
-        if (isCancelled.compareAndSet(false, true)) {
-            for (Cancellable c : list) {
-                c.cancel();
-            }
+    @Override
+    void notifySubscriber(int revision, Wrapper wrapper) {
+        switch (revision) {
+            case CANCELLED:
+            case INTERRUPTED:
+                wrapper.getObject().cancel(revision == INTERRUPTED);
+                wrapper.remove();
+                break;
         }
     }
 }

@@ -5,8 +5,12 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
 
 public class SuperAsyncTest {
+
+    private int count = 0;
 
     @Test
     public void simpleTest() {
@@ -66,6 +70,24 @@ public class SuperAsyncTest {
                 Assert.assertEquals(Integer.valueOf(3), result);
             }
         });
+    }
+
+    @Test
+    public void retrySimple() throws ExecutionException, InterruptedException {
+        Assert.assertEquals(Boolean.TRUE, SuperAsync.newInstance(Executors.newSingleThreadExecutor(), new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws Exception {
+                if (++count <= 2) {
+                    throw new Exception();
+                }
+                return true;
+            }
+        }).retryWhen(new RetryCondition() {
+            @Override
+            public long check(Throwable e, int count) {
+                return count <= 2 ? 30 : DONT_RETRY;
+            }
+        }).execute().get());
     }
 
     private <T> SuperAsync<T> testInstance(Callable<T> callable) {

@@ -15,28 +15,24 @@ class AndThenSuperAsync<U, V> extends SuperAsync<V> {
     }
 
     @Override
-    void execute(final Observer<V> observer, final Canceller canceller) {
-        original.execute(new Observer<U>() {
+    void execute(final Callback<V> callback, final Canceller canceller) {
+        original.execute(new Callback<U>() {
             @Override
             public void onResult(final U result) {
-                CancellableTask cancellableTask = submit(new Callable<V>() {
+                Task task = submit(new Callable<V>() {
                     @Override
                     public V call() throws Exception {
                         return transformation.perform(result);
                     }
-                }, observer);
-                canceller.add(cancellableTask);
+                }, callback);
+                canceller.add(task);
             }
 
             @Override
             public void onError(Throwable e) {
-                observer.onError(e);
+                callback.onError(e);
             }
 
-            @Override
-            public boolean isObserving() {
-                return observer.isObserving();
-            }
         }, canceller);
     }
 }

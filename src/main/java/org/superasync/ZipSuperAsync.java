@@ -19,24 +19,24 @@ public class ZipSuperAsync<U, V, R> extends SuperAsync<R> {
     }
 
     @Override
-    public void execute(Observer<R> observer, Canceller canceller) {
+    public void execute(Callback<R> callback, Canceller canceller) {
 
         AtomicReference<Object> firstOne = new AtomicReference<Object>(null);
 
-        superAsync1.execute(new ResultConsumer1(observer, canceller, firstOne), canceller);
-        superAsync2.execute(new ResultConsumer2(observer, canceller, firstOne), canceller);
+        superAsync1.execute(new ResultConsumer1(callback, canceller, firstOne), canceller);
+        superAsync2.execute(new ResultConsumer2(callback, canceller, firstOne), canceller);
     }
 
-    private class ResultConsumer1 implements Observer<U> {
+    private class ResultConsumer1 implements Callback<U> {
 
         private final Canceller canceller;
-        private final Observer<R> observer;
+        private final Callback<R> callback;
         private final AtomicReference<Object> firstOne;
 
-        ResultConsumer1(Observer<R> observer,
+        ResultConsumer1(Callback<R> callback,
                         Canceller canceller,
                         AtomicReference<Object> firstOne) {
-            this.observer = observer;
+            this.callback = callback;
             this.canceller = canceller;
             this.firstOne = firstOne;
         }
@@ -44,38 +44,34 @@ public class ZipSuperAsync<U, V, R> extends SuperAsync<R> {
         @Override
         public void onResult(final U result) {
             if (!firstOne.compareAndSet(null, result)) {
-                CancellableTask cancellableTask = submit(new Callable<R>() {
+                Task task = submit(new Callable<R>() {
                     @Override
                     public R call() throws Exception {
                         //noinspection unchecked
                         return zipFunc.zip(result, (V) firstOne.get());
                     }
-                }, observer);
-                canceller.add(cancellableTask);
+                }, callback);
+                canceller.add(task);
             }
         }
 
         @Override
         public void onError(Throwable e) {
-            observer.onError(e);
+            callback.onError(e);
         }
 
-        @Override
-        public boolean isObserving() {
-            return observer.isObserving();
-        }
     }
 
-    private class ResultConsumer2 implements Observer<V> {
+    private class ResultConsumer2 implements Callback<V> {
 
         private final Canceller canceller;
-        private final Observer<R> observer;
+        private final Callback<R> callback;
         private final AtomicReference<Object> firstOne;
 
-        ResultConsumer2(Observer<R> observer,
+        ResultConsumer2(Callback<R> callback,
                         Canceller canceller,
                         AtomicReference<Object> firstOne) {
-            this.observer = observer;
+            this.callback = callback;
             this.canceller = canceller;
             this.firstOne = firstOne;
         }
@@ -83,25 +79,21 @@ public class ZipSuperAsync<U, V, R> extends SuperAsync<R> {
         @Override
         public void onResult(final V result) {
             if (!firstOne.compareAndSet(null, result)) {
-                CancellableTask cancellableTask = submit(new Callable<R>() {
+                Task task = submit(new Callable<R>() {
                     @Override
                     public R call() throws Exception {
                         //noinspection unchecked
                         return zipFunc.zip((U) firstOne.get(), result);
                     }
-                }, observer);
-                canceller.add(cancellableTask);
+                }, callback);
+                canceller.add(task);
             }
         }
 
         @Override
         public void onError(Throwable e) {
-            observer.onError(e);
+            callback.onError(e);
         }
 
-        @Override
-        public boolean isObserving() {
-            return observer.isObserving();
-        }
     }
 }
